@@ -2,11 +2,19 @@
 
 ## Parte 1: Introducción a Docker
 
-### Ejercicio N°1:
-Para ejecutar el primer ejercicio simplemente hay que correr el script de bash en una terminal en el root del proyecto:
+### Ejercicio N°2:
+Se modifica el subscript para generar el archivo de Docker Compose para que los archivos de configuración se inyecten en sus 
+respectivos containers. Para ello se hacen bind mounts: uno para el server y uno para cada cliente. Así, no hay que hacer 
+build de las imágenes cada vez que se cambia la configuración.
 
+Para ver que efectivamente se hayan hecho los bind mounts, podemos ejecutar el siguiente comando:
 ```
-./generar-compose.sh ${NOMBRE_ARCHIVO_SALIDA.yaml} ${CANTIDAD_CLIENTES}
+docker inspect ${CONTAINER_ID}
 ```
-
-Este script invoca al subscript `subscript-generar-compose.py` que toma los argumentos y genera el archivo de Docker Compose.
+En la sección de `Mounts` veremos que tenemos lo siguiente:
+```
+"Type": "bind",
+...
+"Destination": "/config.ini",
+```
+Lo que nos indica que efectivamente el container tiene el archivo de configuración montado.

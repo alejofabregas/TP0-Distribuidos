@@ -48,16 +48,6 @@ def generar_docker_compose(nombre_archivo, cantidad_clientes):
 
         }
 
-    """docker_compose["volumes"] = {
-        "server_config": {},
-        "client_config": {}
-        "volumes": ["client_config:/client/config.yaml"]
-        "volumes": ["server_config:/server/config.ini"]
-
-        "volumes": ["./client/config.yaml:/config.yaml"]
-        "volumes": ["./server/config.ini:/config.ini"]
-    }"""
-
     with open(nombre_archivo, "w") as archivo:
         yaml.dump(docker_compose, archivo, default_flow_style=False, sort_keys=False)
 
