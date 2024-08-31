@@ -2,21 +2,16 @@
 
 ## Parte 1: Introducción a Docker
 
-### Ejercicio N°2:
-Se modifica el subscript para generar el archivo de Docker Compose para que los archivos de configuración se inyecten en sus 
-respectivos containers. Para ello se hacen bind mounts: uno para el server y uno para cada cliente. Así, no hay que hacer 
-build de las imágenes cada vez que se cambia la configuración.
+### Ejercicio N°3:
 
-Para ver que efectivamente se hayan hecho los bind mounts, podemos ejecutar el siguiente comando:
-```
-docker inspect ${CONTAINER_ID}
-```
-En la sección de `Mounts` veremos que tenemos lo siguiente:
-```
-"Type": "bind",
-...
-"Destination": "/config.ini",
-```
-Lo que nos indica que efectivamente el container tiene el archivo de configuración montado.
+Para ejecutar el primer ejercicio simplemente hay que correr el script de bash en una terminal en el root del proyecto:
 
-Esto también se puede ver en Docker Desktop si entramos a los detalles de alguno de los containers, en la sección `Bind mounts`.
+```
+./validar-echo-server.sh
+```
+
+El script primero levanta una instancia del server, luego levanta un container con una imagen a la que le agregamos el comando `netcat`.
+Luego ejecutamos el comando netcat con la dirección y el puerto del server (levantados de su archivo de configuración), y con un pipe
+le enviamos un mensaje de prueba que esperamos recibir de nuevo del echo server. Una vez hecho esto, se detienen ambos containers.
+Finalmente, se compara el mensaje de prueba enviado y la respuesta recibida del server. Si son iguales, se imprime el mensaje de éxito; 
+si no lo son, se imprime el mensaje de fracaso.
