@@ -18,3 +18,5 @@ En la sección de `Mounts` veremos que tenemos lo siguiente:
 "Destination": "/config.ini",
 ```
 Lo que nos indica que efectivamente el container tiene el archivo de configuración montado.
+
+Esto también se puede ver en Docker Desktop si entramos a los detalles de alguno de los containers, en la sección `Bind mounts`.
