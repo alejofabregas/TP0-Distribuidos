@@ -47,9 +47,9 @@ def generar_docker_compose(nombre_archivo, cantidad_clientes):
     with open(nombre_archivo, "w") as archivo:
         yaml.dump(docker_compose, archivo, default_flow_style=False, sort_keys=False)
 
-    print("\nSubscript de Python")
-    print("Archivo de Docker Compose generado:", nombre_archivo)
-    print("Cantidad de clientes:", cantidad_clientes)
+    # print("\nSubscript de Python")
+    # print("Archivo de Docker Compose generado:", nombre_archivo)
+    # print("Cantidad de clientes:", cantidad_clientes)
 
 
 if __name__ == "__main__":
