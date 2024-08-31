@@ -9,5 +9,5 @@ Para ejecutar el primer ejercicio simplemente hay que correr el script de bash e
 ./generar-compose.sh ${NOMBRE_ARCHIVO_SALIDA.yaml} ${CANTIDAD_CLIENTES}
 ```
 
-Este script invoca al subscript `subscript-generar-compose.py` que toma los argumentos y genera el archivo de Docker Compose.
+Este script invoca al subscript `subscript-generar-compose.py` que toma los argumentos y genera el archivo de Docker Compose en la ruta indicada.
 El script de bash valida los argumentos, sólo funciona si se le pasan los dos indicados.
