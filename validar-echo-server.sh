@@ -1,7 +1,7 @@
 #!/bin/bash
 
-DIRECCION_SERVER="server"
-PUERTO_SERVER="12345"
+DIRECCION_SERVER=$(grep SERVER_IP server/config.ini | cut -d ' ' -f 3)
+PUERTO_SERVER=$(grep SERVER_PORT server/config.ini | cut -d ' ' -f 3)
 MENSAJE="HOLA MUNDO"
 
 make docker-compose-up
