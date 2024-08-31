@@ -10,3 +10,4 @@ Para ejecutar el primer ejercicio simplemente hay que correr el script de bash e
 ```
 
 Este script invoca al subscript `subscript-generar-compose.py` que toma los argumentos y genera el archivo de Docker Compose.
+El script de bash valida los argumentos, sólo funciona si se le pasan los dos indicados.
