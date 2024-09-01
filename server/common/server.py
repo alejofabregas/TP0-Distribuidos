@@ -1,5 +1,6 @@
 import socket
 import logging
+import signal
 
 
 class Server:
@@ -8,6 +9,12 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self._clients = []
+
+        # Set signal handlers
+        self._shutdown_triggered = False
+        signal.signal(signal.SIGTERM, self.__trigger_shutdown)
+        signal.signal(signal.SIGINT, self.__trigger_shutdown)
 
     def run(self):
         """
@@ -20,9 +27,21 @@ class Server:
 
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
-        while True:
-            client_sock = self.__accept_new_connection()
-            self.__handle_client_connection(client_sock)
+        while not self._shutdown_triggered:
+            try:
+                client_sock = self.__accept_new_connection()
+                if self._shutdown_triggered:
+                    client_sock.close()
+                    logging.info('action: client_shutdown | result: success')
+                else:
+                    self._clients.append(client_sock)
+                self.__handle_client_connection(client_sock)
+            except OSError as e:
+                if not self._shutdown_triggered:
+                    logging.error("action: accept_client | result: fail | error: {e}")
+        
+        #self.__handle_shutdown()
+        logging.info('action: server_shutdown | result: success')
 
     def __handle_client_connection(self, client_sock):
         """
@@ -56,3 +75,29 @@ class Server:
         c, addr = self._server_socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
+
+    def __trigger_shutdown(self, signum, stack_frame):
+        """
+        Closes file descriptors and logs the server shutdown.
+        Changes the value of the shutdown flag to True.
+        This function is called when a SIGTERM or SIGINT signal is received.
+        """
+        logging.info(f'action: server_shutdown | result: in_progress | signal: {signum}')
+        
+        self._shutdown_triggered = True
+        
+        for client in self._clients:
+            client.close()
+            logging.info('action: client_shutdown | result: success')
+        
+        if self._server_socket:
+            self._server_socket.close()
+
+    def __handle_shutdown(self):
+        """
+        Closes file descriptors and logs the server shutdown.
+        This function is called when the shutdown_triggered flag is True.
+        """
+        if self._server_socket:
+            self._server_socket.close()
+        logging.info('action: server_shutdown | result: success')
