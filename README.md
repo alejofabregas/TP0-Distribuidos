@@ -2,16 +2,30 @@
 
 ## Parte 1: Introducción a Docker
 
-### Ejercicio N°3:
+### Ejercicio N°4:
 
-Para ejecutar el primer ejercicio simplemente hay que correr el script de bash en una terminal en el root del proyecto:
+En este ejercicio se hace el graceful shutdown tanto del servidor como del cliente. Para poder verlo en acción corremos el proyecto 
+como antes y lo finalizamos antes de que termine:
 
 ```
-./validar-echo-server.sh
+make docker-compose-up
+make docker-compose-down
 ```
 
-El script primero levanta una instancia del server, luego levanta un container con una imagen a la que le agregamos el comando `netcat`.
-Luego ejecutamos el comando netcat con la dirección y el puerto del server (levantados de su archivo de configuración), y con un pipe
-le enviamos un mensaje de prueba que esperamos recibir de nuevo del echo server. Una vez hecho esto, se detienen ambos containers.
-Finalmente, se compara el mensaje de prueba enviado y la respuesta recibida del server. Si son iguales, se imprime el mensaje de éxito; 
-si no lo son, se imprime el mensaje de fracaso.
+Para ver los logs que verifican el funcionamiento del shutdown podemos quitar un comentario del archivo Makefile para que se corran los 
+logs cuando se ejecuta docker-compose-down:
+
+```
+docker-compose-down:
+	docker compose -f docker-compose-dev.yaml stop -t 1
+#	make docker-compose-logs
+	docker compose -f docker-compose-dev.yaml down
+.PHONY: docker-compose-down
+```
+
+La otra opción es usar los logs a mano en la terminal viendo primero el ID del container, y luego accediendo a sus logs:
+
+```
+docker ps -a
+docker logs -t ${CONTAINER_ID}
+```
