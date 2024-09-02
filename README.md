@@ -4,7 +4,7 @@
 
 ### Ejercicio N°3:
 
-Para ejecutar el primer ejercicio simplemente hay que correr el script de bash en una terminal en el root del proyecto:
+Para ejecutar el tercer ejercicio simplemente hay que correr el script de bash en una terminal en el root del proyecto:
 
 ```
 ./validar-echo-server.sh
