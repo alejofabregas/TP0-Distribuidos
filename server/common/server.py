@@ -44,7 +44,13 @@ class Server:
         """
         try:
             # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
+            #msg = client_sock.recv(1024).rstrip().decode('utf-8')
+            length_bytes = client_sock.recv(4)
+            length = int.from_bytes(length_bytes, "big")
+            #logging.info(f'action: length | result: success | byte_length: {length}')
+
+            msg = client_sock.recv(length).rstrip().decode('utf-8')
+
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             # TODO: Modify the send to avoid short-writes

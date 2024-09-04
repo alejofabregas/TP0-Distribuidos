@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/binary"
 	"fmt"
 	"os"
 )
@@ -37,25 +38,12 @@ func NewBetFromEnv() (*Bet, error) {
 
 // ToBytes transforms a Bet to a byte slice
 func (b *Bet) ToBytes() []byte {
-	/*var buffer bytes.Buffer
-
-	buffer.WriteString(b.AgencyID)
-	buffer.WriteString("|") // Delimitador entre campos
-	buffer.WriteString(b.FirstName)
-	buffer.WriteString("|")
-	buffer.WriteString(b.LastName)
-	buffer.WriteString("|")
-	buffer.WriteString(b.DocumentID)
-	buffer.WriteString("|")
-	buffer.WriteString(b.BirthDate)
-	buffer.WriteString("|")
-	buffer.WriteString(b.BetNumber)
-	buffer.WriteString("\n")
-
-	return buffer.Bytes()*/
-	//var bytesBuffer []byte
-	string := fmt.Sprintf("%s|%s|%s|%s|%s|%s\n", b.AgencyID, b.FirstName, b.LastName, b.DocumentID, b.BirthDate, b.BetNumber)
-	return []byte(string)
+	message := []byte(fmt.Sprintf("%s|%s|%s|%s|%s|%s\n", b.AgencyID, b.FirstName, b.LastName, b.DocumentID, b.BirthDate, b.BetNumber))
+	length := uint32(len(message))
+	lengnthBytes := make([]byte, 4) // 32 bits == 4 bytes
+	binary.BigEndian.PutUint32(lengnthBytes, length)
+	result := append(lengnthBytes, message...)
+	return result
 }
 
 /*func main() {
