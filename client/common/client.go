@@ -2,6 +2,7 @@ package common
 
 import (
 	"bufio"
+	"encoding/binary"
 	"fmt"
 	"net"
 	"time"
@@ -73,6 +74,13 @@ func (c *Client) StartClientLoop() {
 		os.Exit(0)
 	}()
 
+	betReader, err := NewBetReader()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+	defer betReader.Close()
+
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
@@ -80,24 +88,34 @@ func (c *Client) StartClientLoop() {
 		c.createClientSocket()
 
 		// Create Bet from environment variables
-		bet, err := NewBetFromEnv()
+		/*bet, err := NewBetFromEnv()
 		if err != nil {
 			fmt.Println("Error creating Bet structure:", err)
 			return
-		}
+		}*/
 
-		// TODO: Modify the send to avoid short-write
+		// Llamada para el primer batch
+		data, totalBytes, err := betReader.NewBetBatch()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+		
+		lengthBytes := make([]byte, 4) // 32 bits == 4 bytes
+		binary.BigEndian.PutUint32(lengthBytes, totalBytes)
+		batch := append(lengthBytes, data...)
+
 		// Send Bet to server through socket
-		n, err := c.WriteAll(bet.ToBytes())
-		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
+		n, err := c.WriteAll(batch)
+		log.Infof("action: batch_enviado | result: success | dni: %v | numero: %v",
 			bet.DocumentID,
 			bet.BetNumber,
 		)
 		if n < len(bet.ToBytes()) {
-			log.Errorf("action: apuesta_enviada | result: fail | short_read")
+			log.Errorf("action: batch_enviado | result: fail | short_write")
 		}
 
-		// Receive Bet ACK from server
+		// Receive Batch ACK from server
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 
 		// Close the connection to the server
@@ -117,9 +135,10 @@ func (c *Client) StartClientLoop() {
 		)
 
 		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
+		// time.Sleep(c.config.LoopPeriod)
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+	
 }
 
 func (c *Client) WriteAll(buffer []byte) (int, error) {

@@ -7,4 +7,7 @@ loop:
 log:
   level: "INFO"
 batch:
-  maxAmount: 10
+  maxAmount: 135
+  # La linea mas larga de los CSV es de 59 caracteres = 59 bytes.
+  # Si hago 8kb = 8000 bytes // 59 bytes me da 135 maximos batches para no pasarme de 8kb.
+  # Esto tambien me deja lugar para el overhead del protocolo.

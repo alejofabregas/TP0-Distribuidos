@@ -50,12 +50,16 @@ class Server:
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
 
-            bet_data = msg.split("|")
-            bet = Bet(*bet_data)
-            store_bets([bet])
-            logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
+            bets = msg.split("\n")
+            for i, bet in enumerate(bets):
+                bet_data = bet.split("|")
+                bet = Bet(*bet_data)
+                bets[i] = bet
+            store_bets(bets)
+            #logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
+            logging.info(f'action: batch_almacenado | result: success | amount: {len(bets)}')
 
-            response = "Bets OK\n".encode('utf-8')
+            response = "Batch OK\n".encode('utf-8')
             self.__write_all(client_sock, response)
             logging.info('action: ack_enviado | result: success')
         except OSError as e:
