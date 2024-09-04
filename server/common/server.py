@@ -1,7 +1,7 @@
 import socket
 import logging
 import signal
-
+from common.utils import Bet, store_bets
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -44,17 +44,22 @@ class Server:
         """
         try:
             # TODO: Modify the receive to avoid short-reads
-            #msg = client_sock.recv(1024).rstrip().decode('utf-8')
-            length_bytes = client_sock.recv(4)
+            length_bytes = client_sock.recv(4) #Read 4 bytes (32 bits)
             length = int.from_bytes(length_bytes, "big")
-            #logging.info(f'action: length | result: success | byte_length: {length}')
 
             msg = client_sock.recv(length).rstrip().decode('utf-8')
-
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+
+            bet_data = msg.split("|")
+            bet = Bet(*bet_data)
+            store_bets([bet])
+            logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
+
             # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
+            response = "Bets OK"
+            client_sock.send("{}\n".format(response).encode('utf-8'))
+            logging.info('action: ack_enviado | result: success')
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:

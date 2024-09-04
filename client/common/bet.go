@@ -45,17 +45,3 @@ func (b *Bet) ToBytes() []byte {
 	result := append(lengnthBytes, message...)
 	return result
 }
-
-/*func main() {
-	// Ejemplo de uso
-	bet, err := NewBetFromEnv()
-	if err != nil {
-		fmt.Println("Error creating Bet structure:", err)
-		return
-	}
-
-	bytes := bet.ToBytes()
-
-	fmt.Println("Bet bytes:", bytes)
-	fmt.Println("Bet as string:", string(bytes))
-}*/
