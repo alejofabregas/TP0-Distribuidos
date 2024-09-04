@@ -43,8 +43,7 @@ class Server:
         client socket will also be closed
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            length_bytes = client_sock.recv(4) #Read 4 bytes (32 bits)
+            length_bytes = self.__read_all(client_sock, 4) # Read 4 bytes (32 bits)
             length = int.from_bytes(length_bytes, "big")
 
             msg = client_sock.recv(length).rstrip().decode('utf-8')
@@ -56,9 +55,8 @@ class Server:
             store_bets([bet])
             logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
 
-            # TODO: Modify the send to avoid short-writes
-            response = "Bets OK"
-            client_sock.send("{}\n".format(response).encode('utf-8'))
+            response = "Bets OK\n".encode('utf-8')
+            self.__write_all(client_sock, response)
             logging.info('action: ack_enviado | result: success')
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
@@ -95,3 +93,17 @@ class Server:
         
         if self._server_socket:
             self._server_socket.close()
+
+    def __read_all(self, client_sock, length_bytes):
+        buffer = bytearray()
+        while len(buffer) < length_bytes:
+            partial_read = client_sock.recv(length_bytes - len(buffer))
+            buffer.extend(partial_read)
+        return bytes(buffer)
+
+    def __write_all(self, client_sock, buffer):
+        bytes_written = 0
+        while bytes_written < len(buffer):
+            n = client_sock.send(buffer[bytes_written:])
+            bytes_written += n
+        return bytes_written

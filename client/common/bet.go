@@ -40,8 +40,8 @@ func NewBetFromEnv() (*Bet, error) {
 func (b *Bet) ToBytes() []byte {
 	message := []byte(fmt.Sprintf("%s|%s|%s|%s|%s|%s\n", b.AgencyID, b.FirstName, b.LastName, b.DocumentID, b.BirthDate, b.BetNumber))
 	length := uint32(len(message))
-	lengnthBytes := make([]byte, 4) // 32 bits == 4 bytes
-	binary.BigEndian.PutUint32(lengnthBytes, length)
-	result := append(lengnthBytes, message...)
+	lengthBytes := make([]byte, 4) // 32 bits == 4 bytes
+	binary.BigEndian.PutUint32(lengthBytes, length)
+	result := append(lengthBytes, message...)
 	return result
 }

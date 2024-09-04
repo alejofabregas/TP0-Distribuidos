@@ -88,7 +88,7 @@ func (c *Client) StartClientLoop() {
 
 		// TODO: Modify the send to avoid short-write
 		// Send Bet to server through socket
-		n, err := c.conn.Write(bet.ToBytes())
+		n, err := c.WriteAll(bet.ToBytes())
 		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
 			bet.DocumentID,
 			bet.BetNumber,
@@ -120,4 +120,17 @@ func (c *Client) StartClientLoop() {
 		time.Sleep(c.config.LoopPeriod)
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+}
+
+func (c *Client) WriteAll(buffer []byte) (int, error) {
+	bytesWritten := 0
+	for bytesWritten < len(buffer) {
+		// Escribir los bytes restantes del buffer
+		n, err := c.conn.Write(buffer[bytesWritten:])
+		if err != nil {
+			return bytesWritten, err
+		}
+		bytesWritten += n
+	}
+	return bytesWritten, nil
 }
