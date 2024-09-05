@@ -36,20 +36,6 @@ func NewBetFromEnv() (*Bet, error) {
 }
 
 // ToBytes transforms a Bet to a byte slice
-/*func (b *Bet) ToBytes() []byte {
-	message := []byte(fmt.Sprintf("%s|%s|%s|%s|%s|%s\n", b.AgencyID, b.FirstName, b.LastName, b.DocumentID, b.BirthDate, b.BetNumber))
-	length := uint32(len(message))
-	lengthBytes := make([]byte, 4) // 32 bits == 4 bytes
-	binary.BigEndian.PutUint32(lengthBytes, length)
-	result := append(lengthBytes, message...)
-	return result
-}*/
-
 func (b *Bet) ToBytes() []byte {
 	return []byte(fmt.Sprintf("%s|%s|%s|%s|%s|%s\n", b.AgencyID, b.FirstName, b.LastName, b.DocumentID, b.BirthDate, b.BetNumber))
-	/*length := uint32(len(message))
-	lengthBytes := make([]byte, 4) // 32 bits == 4 bytes
-	binary.BigEndian.PutUint32(lengthBytes, length)
-	result := append(lengthBytes, message...)
-	return result*/
 }

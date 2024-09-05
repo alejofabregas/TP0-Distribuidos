@@ -60,6 +60,13 @@ func (c *Client) StartClientLoop() {
 	signal.Notify(signalChan, syscall.SIGTERM)
 	signal.Notify(signalChan, syscall.SIGINT)
 
+	betReader, err := NewBetReader()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+	defer betReader.Close()
+
 	go func() {
 		signal := <-signalChan
 		
@@ -70,56 +77,35 @@ func (c *Client) StartClientLoop() {
 			c.conn.Close()
 		}
 		
+		betReader.Close()
+		
 		log.Infof("action: client_shutdown | result: success | client_id: %v", c.config.ID)
 		os.Exit(0)
 	}()
 
-	betReader, err := NewBetReader()
-		if err != nil {
-			fmt.Println("Error:", err)
-			return
-		}
-	defer betReader.Close()
-
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
+	for {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
-
-		// Create Bet from environment variables
-		/*bet, err := NewBetFromEnv()
+		data, totalBytes, eofReached, err := betReader.NewBetBatch()
 		if err != nil {
-			fmt.Println("Error creating Bet structure:", err)
-			return
-		}*/
-
-		// Llamada para el primer batch
-		data, totalBytes, err := betReader.NewBetBatch()
-		if err != nil {
-			fmt.Println("Error:", err)
+			log.Errorf("action: batch_leido | result: fail")
 			return
 		}
-		
+		log.Infof("action: batch_leido | result: success")
+
 		lengthBytes := make([]byte, 4) // 32 bits == 4 bytes
 		binary.BigEndian.PutUint32(lengthBytes, totalBytes)
 		batch := append(lengthBytes, data...)
 
-		// Send Bet to server through socket
+		// Send Batch to server through socket
 		n, err := c.WriteAll(batch)
-		log.Infof("action: batch_enviado | result: success | dni: %v | numero: %v",
-			bet.DocumentID,
-			bet.BetNumber,
-		)
-		if n < len(bet.ToBytes()) {
+		log.Infof("action: batch_enviado | result: success")
+		if n < len(batch) {
 			log.Errorf("action: batch_enviado | result: fail | short_write")
 		}
 
 		// Receive Batch ACK from server
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
-
-		// Close the connection to the server
-		c.conn.Close()
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
@@ -134,11 +120,15 @@ func (c *Client) StartClientLoop() {
 			string(msg),
 		)
 
-		// Wait a time between sending one message and the next one
-		// time.Sleep(c.config.LoopPeriod)
+		if eofReached {
+			log.Infof("action: envio_completado | result: success")
+			// Close the connection to the server
+			c.conn.Close()
+			break
+		}
 	}
+
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-	
 }
 
 func (c *Client) WriteAll(buffer []byte) (int, error) {

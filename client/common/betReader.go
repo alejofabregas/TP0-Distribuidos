@@ -45,21 +45,23 @@ func (br *BetReader) Close() {
 
 // NewBetBatch reeds a batch of 135 lines from the CSV file and returns a byte buffer
 // and the total length of the buffer. Reads from last point read.
-func (br *BetReader) NewBetBatch() ([]byte, uint32, error) {
+func (br *BetReader) NewBetBatch() ([]byte, uint32, bool, error) {
 	var buffer bytes.Buffer
 	lineCount := 0
+	eofReached := false
 
 	for lineCount < maxAmount {
 		record, err := br.reader.Read()
 		if err == io.EOF {
+			eofReached = true
 			break
 		}
 		if err != nil {
-			return nil, 0, fmt.Errorf("error al leer el archivo CSV: %v", err)
+			return nil, 0, eofReached, fmt.Errorf("error al leer el archivo CSV: %v", err)
 		}
 
 		if len(record) < 5 {
-			return nil, 0, fmt.Errorf("formato incorrecto en la línea %d", lineCount+1)
+			return nil, 0, eofReached, fmt.Errorf("formato incorrecto en la línea %d", lineCount+1)
 		}
 
 		bet := Bet{
@@ -75,5 +77,5 @@ func (br *BetReader) NewBetBatch() ([]byte, uint32, error) {
 		lineCount++
 	}
 
-	return buffer.Bytes(), uint32(buffer.Len()), nil
+	return buffer.Bytes(), uint32(buffer.Len()), eofReached, nil
 }

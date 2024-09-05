@@ -48,7 +48,7 @@ class Server:
 
             msg = client_sock.recv(length).rstrip().decode('utf-8')
             addr = client_sock.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+            logging.info(f'action: receive_message | result: success | ip: {addr[0]}')
 
             bets = msg.split("\n")
             for i, bet in enumerate(bets):
@@ -56,7 +56,6 @@ class Server:
                 bet = Bet(*bet_data)
                 bets[i] = bet
             store_bets(bets)
-            #logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
             logging.info(f'action: batch_almacenado | result: success | amount: {len(bets)}')
 
             response = "Batch OK\n".encode('utf-8')
