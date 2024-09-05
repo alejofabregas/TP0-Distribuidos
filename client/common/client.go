@@ -21,6 +21,7 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
+	BatchMaxAmount int
 }
 
 // Client Entity that encapsulates how
@@ -60,7 +61,7 @@ func (c *Client) StartClientLoop() {
 	signal.Notify(signalChan, syscall.SIGTERM)
 	signal.Notify(signalChan, syscall.SIGINT)
 
-	betReader, err := NewBetReader()
+	betReader, err := NewBetReader(c.config.BatchMaxAmount)
 		if err != nil {
 			fmt.Println("Error:", err)
 			return

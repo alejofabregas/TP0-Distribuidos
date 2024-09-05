@@ -8,17 +8,16 @@ import (
 	"os"
 )
 
-const maxAmount = 135
-
 // Betreader structure that stores the reading state of the CSV file.
 type BetReader struct {
 	agencyID string
 	reader   *csv.Reader
 	file     *os.File
+	batchMaxAmount int
 }
 
 // NewBeatReader initializes a BetReader that opens and reads from the CSV file.
-func NewBetReader() (*BetReader, error) {
+func NewBetReader(batchMaxAmount int) (*BetReader, error) {
 	agencyID := os.Getenv("CLI_ID")
 	if agencyID == "" {
 		return nil, fmt.Errorf("Undefined environment variable CLI_ID")
@@ -35,6 +34,7 @@ func NewBetReader() (*BetReader, error) {
 		agencyID: agencyID,
 		reader:   reader,
 		file:     file,
+		batchMaxAmount: batchMaxAmount,
 	}, nil
 }
 
@@ -50,7 +50,7 @@ func (br *BetReader) NewBetBatch() ([]byte, uint32, bool, error) {
 	lineCount := 0
 	eofReached := false
 
-	for lineCount < maxAmount {
+	for lineCount < br.batchMaxAmount {
 		record, err := br.reader.Read()
 		if err == io.EOF {
 			eofReached = true
