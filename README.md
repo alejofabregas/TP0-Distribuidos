@@ -2,26 +2,26 @@
 
 ## Parte 2: Repaso de Comunicaciones
 
-### Ejercicio N°5:
+### Ejercicio N°6:
 
-En este ejercicio se implementó el envío y recepción de apuestas entre cliente y servidor. Se puede observar el comportamiento 
-viendo los logs utilizando:
+En este ejercicio se implementó el envío y recepción de apuestas en forma de batch entre el cliente y servidor. 
+Se puede observar el comportamiento viendo los logs utilizando:
 ```
 make docker-compose-up
 make docker-compose-logs
 make docker-compose-down
 ```
 
-También podemos ver cómo se guardan las apuestas en el servidor accediendo al archivo bets.csv dentro de su container.
-
-Se implementan funciones read_all y write_all para leer y escribir del socket sin el error de short read y short write.
+También se puede ver que el servidor recibe el total de las apuestas correspondiente a los archivos `agency-<n>.csv` de cada cliente 
+en el archivo `bets.csv` dentro del container del servidor.
+El total de apuestas recibidas por el servidor es de `78697`, lo que corresponde a la suma de las apuestas de todos los clientes.
 
 ### Protocolo de comunicación
 
-Se utiliza un esquema mixto. Los mensajes tienen la siguiente forma:
-```
-<LARGO_STRING>"<AGENCY_ID>|<FIRST_NAME>|<LAST_NAME>|<DOCUMENT_ID>|<BIRTH_DATE>|<BET_NUMBER>\n"
-```
-Primero tenemos el largo de la string del mensaje, que es un `uint32` que indica cuántos bytes más hay que leer. 
-Esto es lo primero que va en el mensaje, tiene un largo fijo de 4 bytes que se leen siempre primero y se encodean en BigEndian. 
-Luego tenemos una string que usa como separador el caracter `|`. Se encuentran todos las partes de una Bet hasta un último `\n`.
+Se utiliza un esquema muy similar al de ejercicio anterior, anteponiendo la cantidad de bytes a leer. 
+La diferencia es que ahora se encadenan todas las bets de un batch una detrás de la otra en un mismo buffer de bytes. 
+Estas bets van separadas con un \n.
+
+En cuanto a la variable `BatchMaxAmount` del archivo de configuración del cliente, consideré usar `135` bets por batch. 
+Esto es porque la bet de mayor largo tiene 59 caracteres = 59 bytes, por lo que si usamos 135 bets de este tamaño 
+no nos excedemos de los 8 kb = 8000 bytes de largo máximo de un paquete requerido por la cátedra.
