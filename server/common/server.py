@@ -1,9 +1,10 @@
 import socket
 import logging
 import signal
+import os
 from common.utils import Bet, store_bets, load_bets, has_won
 
-CLIENT_COUNT = 5
+CLIENT_COUNT = int(os.getenv("CLIENT_COUNT"))
 
 class Server:
     def __init__(self, port, listen_backlog):

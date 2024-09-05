@@ -48,6 +48,8 @@ def generar_docker_compose(nombre_archivo, cantidad_clientes):
                 ]
 
         }
+        
+    docker_compose["services"]["server"]["environment"].append(f"CLIENT_COUNT={cantidad_clientes}")
 
     with open(nombre_archivo, "w") as archivo:
         yaml.dump(docker_compose, archivo, default_flow_style=False, sort_keys=False)
