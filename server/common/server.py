@@ -46,7 +46,7 @@ class Server:
             length_bytes = self.__read_all(client_sock, 4) # Read 4 bytes (32 bits)
             length = int.from_bytes(length_bytes, "big")
 
-            msg = client_sock.recv(length).rstrip().decode('utf-8')
+            msg = self.__read_all(client_sock, length).rstrip().decode('utf-8')
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]}')
 
