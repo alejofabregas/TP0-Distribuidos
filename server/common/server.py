@@ -2,9 +2,8 @@ import socket
 import logging
 import signal
 import os
-import threading
 import multiprocessing    
-from multiprocessing.pool import ThreadPool
+from multiprocessing import Process, Manager
 from common.utils import Bet, store_bets, load_bets, has_won
 
 CLIENT_COUNT = int(os.getenv("CLIENT_COUNT"))
@@ -16,14 +15,13 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._clients = []
-        self._finished_clients = {}
-        # Lock for protecting access to self._finished_clients
-        self._finished_clients_lock = multiprocessing.Lock()
+        # Manager to access shared dictionary among multiple proccesses
+        self._manager = Manager()
+        self._finished_clients = self._manager.dict()
         # Lock for non thread-safe functions
         self._bets_lock = multiprocessing.Lock()
-
-        # ThreadPool initialization
-        self._pool = ThreadPool(processes=CLIENT_COUNT)
+        # Child client processes list
+        self._client_processes = []
 
         # Set signal handlers
         self._shutdown_triggered = False
@@ -42,8 +40,10 @@ class Server:
             try:
                 client_sock = self.__accept_new_connection()
                 self._clients.append(client_sock)
-                # Send task to handle client to the ThreadPool
-                self._pool.apply_async(self.__handle_client_connection, args=(client_sock,))
+                # Send task to handle client to a new Process
+                child_process = Process(target = self.__handle_client_connection, args=(client_sock,))
+                child_process.start()
+                self._client_processes.append(child_process)
             except OSError as e:
                 if not self._shutdown_triggered:
                     logging.error("action: accept_client | result: fail | error: {e}")
@@ -68,7 +68,7 @@ class Server:
 
                 msg = self.__read_all(client_sock, length).rstrip().decode('utf-8')
                 addr = client_sock.getpeername()
-                logging.info(f'action: receive_message | result: success | ip: {addr[0]} | thread_id: {threading.current_thread().ident}')
+                logging.info(f'action: receive_message | result: success | ip: {addr[0]} | process_id: {os.getpid()}')
 
                 try:
                     bets = msg.split("\n")
@@ -123,8 +123,8 @@ class Server:
         if self._server_socket:
             self._server_socket.close()
 
-        self._pool.close()
-        self._pool.join()
+        for client_process in self._client_processes:
+            client_process.terminate()
 
     def __read_all(self, client_sock, length_bytes):
         buffer = bytearray()
@@ -141,7 +141,7 @@ class Server:
         return bytes_written
 
     def __handle_finish(self, client_sock):
-        with self._finished_clients_lock:
+        with self._manager.Lock():
             if len(self._finished_clients) == CLIENT_COUNT - 1:
                 logging.info('action: sorteo | result: success')
                 # Use lock to make user only one thread at a time loads bets (not thread-safe) (only one client should do it anyway)
@@ -157,9 +157,9 @@ class Server:
                 # Add this last client
                 addr = client_sock.getpeername()
                 self._finished_clients[addr] = client_sock
-                for client in self._finished_clients:
-                    self.__write_all(self._finished_clients[client], (msg + "\n").encode('utf-8'))
-                    self._finished_clients[client].close()
+                for client_key in self._finished_clients.keys():
+                    self.__write_all(self._finished_clients[client_key], (msg + "\n").encode('utf-8'))
+                    self._finished_clients[client_key].close()
             else:
                 addr = client_sock.getpeername()
                 self._finished_clients[addr] = client_sock
