@@ -85,9 +85,11 @@ func (c *Client) StartClientLoop() {
 		os.Exit(0)
 	}()
 
+	// Create the connection to the server only once
+	c.createClientSocket()
+
 	for {
-		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
+		
 		data, totalBytes, eofReached, err := betReader.NewBetBatch()
 		if err != nil {
 			log.Errorf("action: batch_leido | result: fail")
@@ -131,8 +133,6 @@ func (c *Client) StartClientLoop() {
 
 		if eofReached {
 			log.Infof("action: envio_completado | result: success")
-			// Close the connection to the server
-			c.conn.Close()
 			break
 		}
 	}
@@ -140,6 +140,9 @@ func (c *Client) StartClientLoop() {
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 
 	c.RequestWinners()
+
+	// Close the connection to the server
+	c.conn.Close()
 
 }
 
@@ -159,8 +162,7 @@ func (c *Client) WriteAll(buffer []byte) (int, error) {
 // RequestWinners connects to the server and sends a finish message
 // to ask for the lottery winners
 func (c *Client) RequestWinners() {
-	c.createClientSocket()
-	
+
 	zeroBytes := make([]byte, 4) // 32 bits == 4 bytes
 	binary.BigEndian.PutUint32(zeroBytes, 0)
 
@@ -185,6 +187,4 @@ func (c *Client) RequestWinners() {
 	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v",
 		winnerCount,
 	)
-
-	c.conn.Close()
 }
