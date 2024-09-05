@@ -8,6 +8,7 @@ import (
 	"time"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/op/go-logging"
@@ -138,6 +139,26 @@ func (c *Client) StartClientLoop() {
 
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 
+	c.RequestWinners()
+
+}
+
+func (c *Client) WriteAll(buffer []byte) (int, error) {
+	bytesWritten := 0
+	for bytesWritten < len(buffer) {
+		// Escribir los bytes restantes del buffer
+		n, err := c.conn.Write(buffer[bytesWritten:])
+		if err != nil {
+			return bytesWritten, err
+		}
+		bytesWritten += n
+	}
+	return bytesWritten, nil
+}
+
+// RequestWinners connects to the server and sends a finish message
+// to ask for the lottery winners
+func (c *Client) RequestWinners() {
 	c.createClientSocket()
 	
 	zeroBytes := make([]byte, 4) // 32 bits == 4 bytes
@@ -160,24 +181,10 @@ func (c *Client) StartClientLoop() {
 		return
 	}
 
-	log.Infof("action: consulta_ganadores | result: success | client_id: %v | msg: %v",
-		c.config.ID,
-		string(msg),
+	winnerCount := len(strings.Split(string(msg), "|"))
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v",
+		winnerCount,
 	)
 
 	c.conn.Close()
-
-}
-
-func (c *Client) WriteAll(buffer []byte) (int, error) {
-	bytesWritten := 0
-	for bytesWritten < len(buffer) {
-		// Escribir los bytes restantes del buffer
-		n, err := c.conn.Write(buffer[bytesWritten:])
-		if err != nil {
-			return bytesWritten, err
-		}
-		bytesWritten += n
-	}
-	return bytesWritten, nil
 }

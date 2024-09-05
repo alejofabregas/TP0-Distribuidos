@@ -3,6 +3,8 @@ import logging
 import signal
 from common.utils import Bet, store_bets, load_bets, has_won
 
+CLIENT_COUNT = 5
+
 class Server:
     def __init__(self, port, listen_backlog):
         # Initialize server socket
@@ -49,7 +51,6 @@ class Server:
 
             if length == 0:
                 self.__handle_finish(client_sock)
-                client_sock.close()
                 return
 
             msg = self.__read_all(client_sock, length).rstrip().decode('utf-8')
@@ -76,7 +77,8 @@ class Server:
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
-            client_sock.close()
+            if length != 0:
+                client_sock.close()
 
     def __accept_new_connection(self):
         """
@@ -124,12 +126,23 @@ class Server:
         return bytes_written
 
     def __handle_finish(self, client_sock):
-        logging.info('action: sorteo | result: success')
-        bets = load_bets()
-        winning_ids = []
-        for bet in bets:
-            if has_won(bet):
-                winning_ids.append(bet.document)
-        msg = "|".join(winning_ids)
-        logging.info(f'action: sorteo_ganadores | result: success | ganadores: {msg}')
-        self.__write_all(client_sock, (msg + "\n").encode('utf-8'))
+        if len(self._finished_clients) == CLIENT_COUNT - 1:
+            logging.info('action: sorteo | result: success')
+            bets = load_bets()
+            winning_ids = []
+            for bet in bets:
+                if has_won(bet):
+                    winning_ids.append(bet.document)
+            msg = "|".join(winning_ids)
+            logging.info(f'action: sorteo_ganadores | result: success | cant_ganadores: {len(winning_ids)}')
+            
+            # Add this last client
+            addr = client_sock.getpeername()
+            self._finished_clients[addr] = client_sock
+            for client in self._finished_clients:
+                self.__write_all(self._finished_clients[client], (msg + "\n").encode('utf-8'))
+                self._finished_clients[client].close()
+        else:
+            addr = client_sock.getpeername()
+            self._finished_clients[addr] = client_sock
+            logging.info(f'action: new_finished_client | result: success | cant: {len(self._finished_clients)} | clients: {self._finished_clients}')
