@@ -116,10 +116,17 @@ func (c *Client) StartClientLoop() {
 			return
 		}
 
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			string(msg),
-		)
+		if msg == "Batch OK\n" {
+			log.Infof("action: batch_ack | result: success | client_id: %v | msg: %v",
+				c.config.ID,
+				string(msg),
+			)
+		} else {
+			log.Errorf("action: batch_ack | result: fail | client_id: %v | msg: %v",
+				c.config.ID,
+				string(msg),
+			)
+		}
 
 		if eofReached {
 			log.Infof("action: envio_completado | result: success")

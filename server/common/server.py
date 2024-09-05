@@ -50,17 +50,23 @@ class Server:
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]}')
 
-            bets = msg.split("\n")
-            for i, bet in enumerate(bets):
-                bet_data = bet.split("|")
-                bet = Bet(*bet_data)
-                bets[i] = bet
-            store_bets(bets)
-            logging.info(f'action: batch_almacenado | result: success | amount: {len(bets)}')
+            try:
+                bets = msg.split("\n")
+                for i, bet in enumerate(bets):
+                    bet_data = bet.split("|")
+                    bet = Bet(*bet_data)
+                    bets[i] = bet
+                store_bets(bets)
+                logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
+                response = "Batch OK\n".encode('utf-8')
+                self.__write_all(client_sock, response)
+                logging.info('action: ack_enviado | result: success')
+            except:
+                logging.error(f'action: apuesta_recibida | result: fail | cantidad: {len(bets)}')
+                response = "Batch ERR\n".encode('utf-8')
+                self.__write_all(client_sock, response)
+                logging.info('action: error_enviado | result: success')
 
-            response = "Batch OK\n".encode('utf-8')
-            self.__write_all(client_sock, response)
-            logging.info('action: ack_enviado | result: success')
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
