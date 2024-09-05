@@ -137,6 +137,36 @@ func (c *Client) StartClientLoop() {
 	}
 
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+
+	c.createClientSocket()
+	
+	zeroBytes := make([]byte, 4) // 32 bits == 4 bytes
+	binary.BigEndian.PutUint32(zeroBytes, 0)
+
+	// Send Finish to server through socket
+	n, err := c.WriteAll(zeroBytes)
+	log.Infof("action: finish_enviado | result: success")
+	if n < len(zeroBytes) {
+		log.Errorf("action: finish_enviado | result: fail | short_write")
+	}
+
+	msg, err := bufio.NewReader(c.conn).ReadString('\n')
+
+	if err != nil {
+		log.Errorf("action: consulta_ganadores | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return
+	}
+
+	log.Infof("action: consulta_ganadores | result: success | client_id: %v | msg: %v",
+		c.config.ID,
+		string(msg),
+	)
+
+	c.conn.Close()
+
 }
 
 func (c *Client) WriteAll(buffer []byte) (int, error) {

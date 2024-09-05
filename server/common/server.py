@@ -1,7 +1,7 @@
 import socket
 import logging
 import signal
-from common.utils import Bet, store_bets
+from common.utils import Bet, store_bets, load_bets, has_won
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -10,6 +10,7 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._clients = []
+        self._finished_clients = {}
 
         # Set signal handlers
         self._shutdown_triggered = False
@@ -45,6 +46,11 @@ class Server:
         try:
             length_bytes = self.__read_all(client_sock, 4) # Read 4 bytes (32 bits)
             length = int.from_bytes(length_bytes, "big")
+
+            if length == 0:
+                self.__handle_finish(client_sock)
+                client_sock.close()
+                return
 
             msg = self.__read_all(client_sock, length).rstrip().decode('utf-8')
             addr = client_sock.getpeername()
@@ -116,3 +122,14 @@ class Server:
             n = client_sock.send(buffer[bytes_written:])
             bytes_written += n
         return bytes_written
+
+    def __handle_finish(self, client_sock):
+        logging.info('action: sorteo | result: success')
+        bets = load_bets()
+        winning_ids = []
+        for bet in bets:
+            if has_won(bet):
+                winning_ids.append(bet.document)
+        msg = "|".join(winning_ids)
+        logging.info(f'action: sorteo_ganadores | result: success | ganadores: {msg}')
+        self.__write_all(client_sock, (msg + "\n").encode('utf-8'))
