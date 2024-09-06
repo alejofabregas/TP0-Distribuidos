@@ -144,12 +144,12 @@ class Server:
 
     def __handle_finish(self, client_sock, agency_id):
         with self._manager.Lock():
-            if len(self._finished_clients) == CLIENT_COUNT - 1:
-                # Add this last client
-                addr = client_sock.getpeername()
-                self._finished_clients[agency_id] = [client_sock, addr]
-                logging.info(f'action: new_finished_client | result: success | cant: {len(self._finished_clients)} | clients: {self._finished_clients.keys()}')
+            # Add this client
+            addr = client_sock.getpeername()
+            self._finished_clients[agency_id] = [client_sock, addr]
+            logging.info(f'action: new_finished_client | result: success | cant: {len(self._finished_clients)} | clients: {self._finished_clients.keys()}')
 
+            if len(self._finished_clients) == CLIENT_COUNT:
                 logging.info('action: sorteo | result: success')
                 # Use lock to make user only one thread at a time loads bets (not thread-safe) (only one client should do it anyway)
                 with self._bets_lock:
@@ -172,7 +172,3 @@ class Server:
                         msg = ""
                     self.__write_all(self._finished_clients[client_key][0], (msg + "\n").encode('utf-8'))
                     self._finished_clients[client_key][0].close()
-            else:
-                addr = client_sock.getpeername()
-                self._finished_clients[agency_id] = [client_sock, addr]
-                logging.info(f'action: new_finished_client | result: success | cant: {len(self._finished_clients)} | clients: {self._finished_clients.keys()}')
