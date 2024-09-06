@@ -8,6 +8,7 @@ import (
 	"time"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -173,6 +174,18 @@ func (c *Client) RequestWinners() {
 		log.Errorf("action: finish_enviado | result: fail | short_write")
 	}
 
+	agencyID, err := strconv.Atoi(c.config.ID)
+	agencyIDBytes := make([]byte, 4) // 32 bits == 4 bytes
+	binary.BigEndian.PutUint32(agencyIDBytes, uint32(agencyID))
+
+	// Send AgencyID to server through socket
+	n2, err := c.WriteAll(agencyIDBytes)
+	log.Infof("action: finish_enviado | result: success")
+	if n2 < len(agencyIDBytes) {
+		log.Errorf("action: finish_enviado | result: fail | short_write")
+	}
+
+	// Read winners
 	msg, err := bufio.NewReader(c.conn).ReadString('\n')
 
 	if err != nil {
@@ -184,6 +197,9 @@ func (c *Client) RequestWinners() {
 	}
 
 	winnerCount := len(strings.Split(string(msg), "|"))
+	if msg == "\n" {
+		winnerCount = 0
+	}
 	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v",
 		winnerCount,
 	)
