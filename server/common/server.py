@@ -51,7 +51,9 @@ class Server:
             length = int.from_bytes(length_bytes, "big")
 
             if length == 0:
-                self.__handle_finish(client_sock)
+                agency_id_bytes = self.__read_all(client_sock, 4) # Read 4 bytes (32 bits)
+                agency_id = int.from_bytes(agency_id_bytes, "big")
+                self.__handle_finish(client_sock, agency_id)
                 return
 
             msg = self.__read_all(client_sock, length).rstrip().decode('utf-8')
@@ -126,24 +128,30 @@ class Server:
             bytes_written += n
         return bytes_written
 
-    def __handle_finish(self, client_sock):
-        if len(self._finished_clients) == CLIENT_COUNT - 1:
+    def __handle_finish(self, client_sock, agency_id):
+        # Add this client
+        addr = client_sock.getpeername()
+        self._finished_clients[agency_id] = [client_sock, addr]
+        logging.info(f'action: new_finished_client | result: success | cant: {len(self._finished_clients)} | clients: {self._finished_clients.keys()}')
+
+        if len(self._finished_clients) == CLIENT_COUNT:
             logging.info('action: sorteo | result: success')
             bets = load_bets()
-            winning_ids = []
+            winning_bets = {}
+            winning_bets_count = 0
             for bet in bets:
                 if has_won(bet):
-                    winning_ids.append(bet.document)
-            msg = "|".join(winning_ids)
-            logging.info(f'action: sorteo_ganadores | result: success | cant_ganadores: {len(winning_ids)}')
+                    winning_bets_count += 1
+                    if bet.agency in winning_bets:
+                        winning_bets[bet.agency].append(bet.document)
+                    else:
+                        winning_bets[bet.agency] = [bet.document]
+            logging.info(f'action: sorteo_ganadores | result: success | cant_ganadores: {winning_bets_count}')
             
-            # Add this last client
-            addr = client_sock.getpeername()
-            self._finished_clients[addr] = client_sock
-            for client in self._finished_clients:
-                self.__write_all(self._finished_clients[client], (msg + "\n").encode('utf-8'))
-                self._finished_clients[client].close()
-        else:
-            addr = client_sock.getpeername()
-            self._finished_clients[addr] = client_sock
-            logging.info(f'action: new_finished_client | result: success | cant: {len(self._finished_clients)} | clients: {self._finished_clients}')
+            for client_key in self._finished_clients.keys():
+                if client_key in winning_bets:
+                    msg = "|".join(winning_bets[client_key])
+                else:
+                    msg = ""
+                self.__write_all(self._finished_clients[client_key][0], (msg + "\n").encode('utf-8'))
+                self._finished_clients[client_key][0].close()
